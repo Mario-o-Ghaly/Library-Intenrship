@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcription Page</title>
+</head>
+<body>
+    <h1>Transcribe Audio</h1>
+    
+    <form id="uploadForm" enctype="multipart/form-data">
+        <label for="audio">Select an audio file:</label>
+        <input type="file" id="audio" name="audio" accept="audio/*">
+        <button type="submit">Upload and Transcribe</button>
+    </form>
+
+    <div id="transcriptionResult">
+        <h2>Transcription:</h2>
+        <p id="transcriptionText"></p>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the form from submitting in the traditional way
+            
+            const formData = new FormData();
+            const audioFile = document.getElementById('audio').files[0];
+
+            if (audioFile) {
+                formData.append('audio', audioFile);
+
+                fetch('/transcribe/', {
+                    method: 'POST',
+                    body: formData,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.transcription) {
+                        document.getElementById('transcriptionText').innerText = data.transcription;
+                    } else if (data.error) {
+                        document.getElementById('transcriptionText').innerText = data.error;
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            } else {print
+                alert('Please select an audio file.');
+            }
+        });
+    </script>
+</body>
+</html>

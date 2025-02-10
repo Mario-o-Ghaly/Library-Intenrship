@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Page</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            height: 100vh;
+            margin: 0;
+        }
+        form {
+            width: 100%;
+            max-width: 800px;
+            margin-top: 5vh;
+        }
+        .form-section {
+            margin-bottom: 20px;
+        }
+        .form-section label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-section input, .form-section select, .form-section button {
+            padding: 10px;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .form-section input[type="text"] {
+            width: calc(100% - 22px);
+        }
+        .filter-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .filter-group label {
+            display: block;
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+        }
+        .input-group input[type="text"] {
+            flex: 1;
+            margin-right: 0;
+        }
+        label[for="query"] {
+            text-align: center;
+            font-weight: bold;
+            display: block; 
+            width: 100%;
+        }
+        label[for="filters"] {
+            text-align: center;
+            font-weight: bold;
+            display: block;
+            width: 100%;
+        }
+        label[for="spaced"] {
+            text-align: center;
+            font-weight: bold;
+            display: block;
+            width: 100%;
+            margin-top: 45px;
+            margin-bottom: -5px;
+        }
+        .filter-section {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        .filter-search {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        #search-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .search-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .field-select, .search-input {
+            padding: 10px;
+            font-size: 16px;
+        }
+        .add-row-button {
+            background-color: #0073e6;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .add-row-button:hover {
+            background-color: #005bb5;
+        }
+        .remove-row-button {
+            background-color: #790303;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-left: 10px;
+        }
+        #loading-spinner {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            border: 10px solid #f3f3f3;
+            border-top: 10px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            z-index: 1000;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>    
+<body>
+    <div id="loading-spinner"></div>
+    <form action="/search" method="get">
+        <div class="form-section">
+            <label for="query">What are you searching for?</label>
+            <div class="input-group">
+                <input type="text" id="query" name="query" placeholder="search query">
+                <button type="submit">Search</button>
+                <button type="button" id="record-btn">Record</button>
+            </div>
+        </div>
+        <div id="search-container">
+            <div class="search-row">
+                <select class="field-select">
+                    <option value="all_fields">All Fields</option>
+                    <option value="author">Author</option>
+                    <option value="title">Title</option>
+                    <option value="publication_title">Publication Title</option>
+                    <option value="subject_terms">Subject Terms</option>
+                    <option value="abstract">Abstract</option>
+                    <option value="call_number">Call Number</option>
+                    <option value="coden">CODEN</option>
+                    <option value="dewey">Dewey</option>
+                    <option value="doi">DOI</option>
+                    <option value="isbn">ISBN</option>
+                    <option value="issn">ISSN</option>
+                    <option value="edition">Edition</option>
+                    <option value="full_text">Full Text</option>
+                    <option value="genre">Genre</option>
+                    <option value="geographic_location">Geographic Location</option>
+                    <option value="issue">Issue</option>
+                    <option value="oclc_number">OCLC Number</option>
+                    <option value="patent_number">Patent Number</option>
+                    <option value="publisher">Publisher</option>
+                </select>                
+                <input type="text" class="search-input" placeholder="Enter search term">
+                <button type="button" class="add-row-button">+</button>
+            </div>
+        </div>        
+        <div class="form-section">
+            <label for="spaced">Filtering Options</label>
+        </div>
+        <div class="form-section">
+            <label>Publication date</label>
+            <div class="filter-group">
+                <button type="button">1 Year</button>
+                <button type="button">3 Years</button>
+                <button type="button">5 Years</button>
+                <button type="button">10 Years</button>
+                <input type="date" name="start_date">
+                <span>to</span>
+                <input type="date" name="end_date">
+            </div>
+        </div>
+        <div class="form-section">
+            <label>Access & Availability</label>
+            <div class="filter-section" id="AccessSection">
+                <label><input type="checkbox" name="full_text_online"> Full Text Online</label>
+                <label><input type="checkbox" name="peer_reviewed"> Scholarly & Peer-Reviewed</label>
+                <label><input type="checkbox" name="ebook"> eBook Full Text in Library Catalog</label>
+                <label><input type="checkbox" name="open_access"> Open Access</label>
+                <label><input type="checkbox" name="physical_books"> Physical Books in Library Catalog</label>
+            </div>
+        </div>
+        <div class="form-section">
+            <label>Content Type</label>
+            <input type="text" class="filter-search" placeholder="Content Type Filter" id="contentTypeFilter">
+            <div class="filter-section" id="contentTypeSection">
+                <label><input type="checkbox" name="any_type" checked> Any Type</label>
+                <label><input type="checkbox" name="audio_recording"> Audio Recording</label>
+                <label><input type="checkbox" name="book_chapter"> Book Chapter</label>
+                <label><input type="checkbox" name="book_review"> Book Review</label>
+                <label><input type="checkbox" name="books"> Books</label>
+                <label><input type="checkbox" name="conference_proceeding"> Conference Proceeding</label>
+                <label><input type="checkbox" name="data_set"> Data Set</label>
+                <label><input type="checkbox" name="dissertation_thesis"> Dissertation/Thesis</label>
+                <label><input type="checkbox" name="government_document"> Government Document</label>
+                <label><input type="checkbox" name="image"> Image</label>
+                <label><input type="checkbox" name="journal_ejournal"> Journal / eJournal</label>
+                <label><input type="checkbox" name="journal_article"> Journal Article</label>
+                <label><input type="checkbox" name="magazine_article"> Magazine Article</label>
+                <label><input type="checkbox" name="manuscript"> Manuscript</label>
+                <label><input type="checkbox" name="map"> Map</label>
+                <label><input type="checkbox" name="music_score"> Music Score</label>
+                <label><input type="checkbox" name="newsletter"> Newsletter</label>
+                <label><input type="checkbox" name="newspaper_article"> Newspaper Article</label>
+                <label><input type="checkbox" name="pamphlet"> Pamphlet</label>
+                <label><input type="checkbox" name="paper"> Paper</label>
+                <label><input type="checkbox" name="photograph"> Photograph</label>
+                <label><input type="checkbox" name="presentation"> Presentation</label>
+                <label><input type="checkbox" name="publication"> Publication</label>
+                <label><input type="checkbox" name="publication_article"> Publication Article</label>
+                <label><input type="checkbox" name="reference"> Reference</label>
+                <label><input type="checkbox" name="report"> Report</label>
+                <label><input type="checkbox" name="standard"> Standard</label>
+                <label><input type="checkbox" name="streaming_audio"> Streaming Audio</label>
+                <label><input type="checkbox" name="streaming_video"> Streaming Video</label>
+                <label><input type="checkbox" name="technical_report"> Technical Report</label>
+                <label><input type="checkbox" name="trade_publication_article"> Trade Publication Article</label>
+                <label><input type="checkbox" name="transcript"> Transcript</label>
+                <label><input type="checkbox" name="video_recording"> Video Recording</label>
+                <label><input type="checkbox" name="web_resource"> Web Resource</label>
+            </div>
+        </div>
+        <div class="form-section">
+            <label>Discipline</label>
+            <input type="text" class="filter-search" placeholder="Discipline Filter" id="DisciplineFilter">
+            <div class="filter-section" id="DisciplineSection">
+                <label><input type="checkbox" name="any_type" checked> Any Type</label>
+                <label><input type="checkbox" name="agriculture"> Agriculture</label>
+                <label><input type="checkbox" name="anatomy_physiology"> Anatomy & Physiology</label>
+                <label><input type="checkbox" name="anthropology"> Anthropology</label>
+                <label><input type="checkbox" name="applied_sciences"> Applied Sciences</label>
+                <label><input type="checkbox" name="architecture"> Architecture</label>
+                <label><input type="checkbox" name="astronomy_astrophysics"> Astronomy & Astrophysics</label>
+                <label><input type="checkbox" name="biology"> Biology</label>
+                <label><input type="checkbox" name="botany"> Botany</label>
+                <label><input type="checkbox" name="business"> Business</label>
+                <label><input type="checkbox" name="chemistry"> Chemistry</label>
+                <label><input type="checkbox" name="computer_science"> Computer Science</label>
+                <label><input type="checkbox" name="dance"> Dance</label>
+                <label><input type="checkbox" name="dentistry"> Dentistry</label>
+                <label><input type="checkbox" name="diet_clinical_nutrition"> Diet & Clinical Nutrition</label>
+                <label><input type="checkbox" name="drama"> Drama</label>
+                <label><input type="checkbox" name="ecology"> Ecology</label>
+                <label><input type="checkbox" name="economics"> Economics</label>
+                <label><input type="checkbox" name="education"> Education</label>
+                <label><input type="checkbox" name="engineering"> Engineering</label>
+                <label><input type="checkbox" name="environmental_sciences"> Environmental Sciences</label>
+                <label><input type="checkbox" name="film"> Film</label>
+                <label><input type="checkbox" name="forestry"> Forestry</label>
+                <label><input type="checkbox" name="geography"> Geography</label>
+                <label><input type="checkbox" name="geology"> Geology</label>
+                <label><input type="checkbox" name="government"> Government</label>
+                <label><input type="checkbox" name="history_archaeology"> History & Archaeology</label>
+                <label><input type="checkbox" name="international_relations"> International Relations</label>
+                <label><input type="checkbox" name="journalism_communications"> Journalism & Communications</label>
+                <label><input type="checkbox" name="korean_literature"> Korean Literature</label>
+                <label><input type="checkbox" name="korean_literature_contemporary_fiction"> Korean Literature, Contemporary Fiction</label>
+                <label><input type="checkbox" name="languages_literatures"> Languages & Literatures</label>
+                <label><input type="checkbox" name="law"> Law</label>
+                <label><input type="checkbox" name="library_information_science"> Library & Information Science</label>
+                <label><input type="checkbox" name="mathematics"> Mathematics</label>
+                <label><input type="checkbox" name="medicine"> Medicine</label>
+                <label><input type="checkbox" name="meteorology_climatology"> Meteorology & Climatology</label>
+                <label><input type="checkbox" name="military_naval_science"> Military & Naval Science</label>
+                <label><input type="checkbox" name="music"> Music</label>
+                <label><input type="checkbox" name="nursing"> Nursing</label>
+                <label><input type="checkbox" name="occupational_therapy_rehabilitation"> Occupational Therapy & Rehabilitation</label>
+                <label><input type="checkbox" name="oceanography"> Oceanography</label>
+                <label><input type="checkbox" name="parapsychology_occult_sciences"> Parapsychology & Occult Sciences</label>
+                <label><input type="checkbox" name="pharmacy_therapeutics_pharmacology"> Pharmacy, Therapeutics, & Pharmacology</label>
+                <label><input type="checkbox" name="philosophy"> Philosophy</label>
+                <label><input type="checkbox" name="physical_therapy"> Physical Therapy</label>
+                <label><input type="checkbox" name="physics"> Physics</label>
+                <label><input type="checkbox" name="political_science"> Political Science</label>
+                <label><input type="checkbox" name="psychology"> Psychology</label>
+                <label><input type="checkbox" name="public_health"> Public Health</label>
+                <label><input type="checkbox" name="recreation_sports"> Recreation & Sports</label>
+                <label><input type="checkbox" name="religion"> Religion</label>
+                <label><input type="checkbox" name="sciences"> Sciences</label>
+                <label><input type="checkbox" name="sciences_general"> Sciences (General)</label>
+                <label><input type="checkbox" name="social_science"> Social Science</label>
+                <label><input type="checkbox" name="social_sciences"> Social Sciences</label>
+                <label><input type="checkbox" name="social_sciences_general"> Social Sciences (General)</label>
+                <label><input type="checkbox" name="social_welfare_social_work"> Social Welfare & Social Work</label>
+                <label><input type="checkbox" name="sociology_social_history"> Sociology & Social History</label>
+                <label><input type="checkbox" name="statistics"> Statistics</label>
+                <label><input type="checkbox" name="veterinary_medicine"> Veterinary Medicine</label>
+                <label><input type="checkbox" name="visual_arts"> Visual Arts</label>
+                <label><input type="checkbox" name="womens_studies"> Women's Studies</label>
+                <label><input type="checkbox" name="zoology"> Zoology</label>
+            </div>
+        </div>
+        <div class="form-section">
+            <label>Language</label>
+            <input type="text" class="filter-search" placeholder="Language Filter" id="LanguageFilter">
+            <div class="filter-section" id="LanguageSection">            
+                <label><input type="checkbox" name="any_type" checked> Any Type</label>
+                <label><input type="checkbox" name="afrikaans"> Afrikaans</label>
+                <label><input type="checkbox" name="albanian"> Albanian</label>
+                <label><input type="checkbox" name="amharic"> Amharic</label>
+                <label><input type="checkbox" name="armenian"> Armenian</label>
+                <label><input type="checkbox" name="azerbaijani"> Azerbaijani</label>
+                <label><input type="checkbox" name="basque"> Basque</label>
+                <label><input type="checkbox" name="belarusian"> Belarusian</label>
+                <label><input type="checkbox" name="bengali"> Bengali</label>
+                <label><input type="checkbox" name="bosnian"> Bosnian</label>
+                <label><input type="checkbox" name="breton"> Breton</label>
+                <label><input type="checkbox" name="bulgarian"> Bulgarian</label>
+                <label><input type="checkbox" name="burmese"> Burmese</label>
+                <label><input type="checkbox" name="català"> Català</label>
+                <label><input type="checkbox" name="čeština"> Čeština</label>
+                <label><input type="checkbox" name="chinese"> Chinese</label>
+                <label><input type="checkbox" name="church_slavic"> Church Slavic</label>
+                <label><input type="checkbox" name="corsican"> Corsican</label>
+                <label><input type="checkbox" name="cree"> Cree</label>
+                <label><input type="checkbox" name="croatian"> Croatian</label>
+                <label><input type="checkbox" name="cymraeg"> Cymraeg</label>
+                <label><input type="checkbox" name="dansk"> Dansk</label>
+                <label><input type="checkbox" name="deutsch"> Deutsch</label>
+                <label><input type="checkbox" name="english"> English</label>
+                <label><input type="checkbox" name="español"> Español</label>
+                <label><input type="checkbox" name="esperanto"> Esperanto</label>
+                <label><input type="checkbox" name="estonian"> Estonian</label>
+                <label><input type="checkbox" name="faroese"> Faroese</label>
+                <label><input type="checkbox" name="français"> Français</label>
+                <label><input type="checkbox" name="gaelic"> Gaelic</label>
+                <label><input type="checkbox" name="galician"> Galician</label>
+                <label><input type="checkbox" name="geez"> Geez</label>
+                <label><input type="checkbox" name="georgian"> Georgian</label>
+                <label><input type="checkbox" name="gujarati"> Gujarati</label>
+                <label><input type="checkbox" name="hindi"> Hindi</label>
+                <label><input type="checkbox" name="hungarian"> Hungarian</label>
+                <label><input type="checkbox" name="indonesian"> Indonesian</label>
+                <label><input type="checkbox" name="inuktitut"> Inuktitut</label>
+                <label><input type="checkbox" name="irish"> Irish</label>
+                <label><input type="checkbox" name="íslenska"> Íslenska</label>
+                <label><input type="checkbox" name="italiano"> Italiano</label>
+                <label><input type="checkbox" name="javanese"> Javanese</label>
+                <label><input type="checkbox" name="kannada"> Kannada</label>
+                <label><input type="checkbox" name="kurdish"> Kurdish</label>
+                <label><input type="checkbox" name="latin"> Latin</label>
+                <label><input type="checkbox" name="latvian"> Latvian</label>
+                <label><input type="checkbox" name="lithuanian"> Lithuanian</label>
+                <label><input type="checkbox" name="macedonian"> Macedonian</label>
+                <label><input type="checkbox" name="malayalam"> Malayalam</label>
+                <label><input type="checkbox" name="manx"> Manx</label>
+                <label><input type="checkbox" name="māori"> Māori</label>
+                <label><input type="checkbox" name="marathi"> Marathi</label>
+                <label><input type="checkbox" name="melayu"> Melayu</label>
+                <label><input type="checkbox" name="mongolian"> Mongolian</label>
+                <label><input type="checkbox" name="ndonga"> Ndonga</label>
+                <label><input type="checkbox" name="nederlands"> Nederlands</label>
+                <label><input type="checkbox" name="nepali"> Nepali</label>
+                <label><input type="checkbox" name="norsk"> Norsk</label>
+                <label><input type="checkbox" name="northern_sami"> Northern Sami</label>
+                <label><input type="checkbox" name="norwegian_bokmål"> Norwegian Bokmål</label>
+                <label><input type="checkbox" name="norwegian_nynorsk"> Norwegian Nynorsk</label>
+                <label><input type="checkbox" name="occitan"> Occitan</label>
+                <label><input type="checkbox" name="ojibwa"> Ojibwa</label>
+                <label><input type="checkbox" name="ottoman"> Ottoman</label>
+                <label><input type="checkbox" name="pali"> Pali</label>
+                <label><input type="checkbox" name="persian"> Persian</label>
+                <label><input type="checkbox" name="polski"> Polski</label>
+                <label><input type="checkbox" name="português"> Português</label>
+                <label><input type="checkbox" name="pushto"> Pushto</label>
+                <label><input type="checkbox" name="quechua"> Quechua</label>
+                <label><input type="checkbox" name="romanian"> Romanian</label>
+                <label><input type="checkbox" name="romansh"> Romansh</label>
+                <label><input type="checkbox" name="samoan"> Samoan</label>
+                <label><input type="checkbox" name="sanskrit"> Sanskrit</label>
+                <label><input type="checkbox" name="serbian"> Serbian</label>
+                <label><input type="checkbox" name="sinhala"> Sinhala</label>
+                <label><input type="checkbox" name="slovak"> Slovak</label>
+                <label><input type="checkbox" name="slovenian"> Slovenian</label>
+                <label><input type="checkbox" name="sotho"> Sotho</label>
+                <label><input type="checkbox" name="suomi"> Suomi</label>
+                <label><input type="checkbox" name="svenska"> Svenska</label>
+                <label><input type="checkbox" name="swahili"> Swahili</label>
+                <label><input type="checkbox" name="tagalog"> Tagalog</label>
+                <label><input type="checkbox" name="tamil"> Tamil</label>
+                <label><input type="checkbox" name="telugu"> Telugu</label>
+                <label><input type="checkbox" name="tibetan"> Tibetan</label>
+                <label><input type="checkbox" name="türkçe"> Türkçe</label>
+                <label><input type="checkbox" name="ukrainian"> Ukrainian</label>
+                <label><input type="checkbox" name="urdu"> Urdu</label>
+                <label><input type="checkbox" name="vietnamese"> Vietnamese</label>
+                <label><input type="checkbox" name="western_frisian"> Western Frisian</label>
+                <label><input type="checkbox" name="xhosa"> Xhosa</label>
+                <label><input type="checkbox" name="yiddish"> Yiddish</label>
+                <label><input type="checkbox" name="zulu"> Zulu</label>
+                <label><input type="checkbox" name="greek"> Ελληνικά</label>
+                <label><input type="checkbox" name="russian"> Русский</label>
+                <label><input type="checkbox" name="hebrew"> עברית</label>
+                <label><input type="checkbox" name="arabic"> العربية</label>
+                <label><input type="checkbox" name="thai"> ไทย</label>
+                <label><input type="checkbox" name="korean"> 한국어</label>
+                <label><input type="checkbox" name="japanese"> 日本語</label>
+            </div>
+        </div>
+        <div class="form-section">
+            <label>Library Location</label>
+            <input type="text" class="filter-search" placeholder="Library Filter" id="LibraryFilter">
+            <div class="filter-section" id="LibrarySection">                  
+                <label><input type="checkbox" name="any_type" checked> Any Type</label>
+                <label><input type="checkbox" name="databases"> Databases</label>
+                <label><input type="checkbox" name="electronic_book"> Electronic Book</label>
+                <label><input type="checkbox" name="electronic_journal"> Electronic Journal</label>
+                <label><input type="checkbox" name="main_library"> Main Library</label>
+                <label><input type="checkbox" name="main_media"> Main Media</label>
+                <label><input type="checkbox" name="main_microforms"> Main Microforms</label>
+                <label><input type="checkbox" name="periodicals"> Periodicals</label>
+                <label><input type="checkbox" name="rare_books_library"> Rare Books Library</label>
+                <label><input type="checkbox" name="rbscl_compact_shelves_room_2033"> RBSCL Compact Shelves Room # 2033</label>
+                <label><input type="checkbox" name="reference"> Reference</label>
+                <label><input type="checkbox" name="reserves"> Reserves</label>
+                <label><input type="checkbox" name="spcl_map"> SPCL Map</label>
+            </div>
+        </div>
+    </form>
+
+    <!-- Client-side validation script -->
+    <script>
+        document.querySelector('form').addEventListener('submit', function(event) {
+            var query = document.querySelector('input[name="query"]').value;
+            var startDate = document.querySelector('input[name="start_date"]').value;
+            var endDate = document.querySelector('input[name="end_date"]').value;
+
+            if (!query) {
+                alert('Search query cannot be empty');
+                event.preventDefault();  //prevent form submission if query is empty
+            } else if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+                alert('End date must be after start date');
+                event.preventDefault();  //prevent form submission if date range is invalid
+            } else {  //pass
+                showLoadingSpinner();
+            }
+        });
+
+        // Filter functionality for content type
+        document.getElementById('contentTypeFilter').addEventListener('input', function() {
+            var filterValue = this.value.toLowerCase();
+            var contentTypeSection = document.getElementById('contentTypeSection');
+            var labels = contentTypeSection.getElementsByTagName('label');
+
+            for (var i = 0; i < labels.length; i++) {
+                var label = labels[i];
+                var text = label.textContent || label.innerText;
+
+                if (text.toLowerCase().indexOf(filterValue) > -1) {
+                    label.style.display = '';
+                } else {
+                    label.style.display = 'none';
+                }
+            }
+        });
+
+        // Filter functionality for Discipline
+        document.getElementById('DisciplineFilter').addEventListener('input', function() {
+            var filterValue = this.value.toLowerCase();
+            var DisciplineSection = document.getElementById('DisciplineSection');
+            var labels = DisciplineSection.getElementsByTagName('label');
+
+            for (var i = 0; i < labels.length; i++) {
+                var label = labels[i];
+                var text = label.textContent || label.innerText;
+
+                if (text.toLowerCase().indexOf(filterValue) > -1) {
+                    label.style.display = '';
+                } else {
+                    label.style.display = 'none';
+                }
+            }
+        });
+
+        // Filter functionality for Language
+        document.getElementById('LanguageFilter').addEventListener('input', function() {
+            var filterValue = this.value.toLowerCase();
+            var LanguageSection = document.getElementById('LanguageSection');
+            var labels = LanguageSection.getElementsByTagName('label');
+
+            for (var i = 0; i < labels.length; i++) {
+                var label = labels[i];
+                var text = label.textContent || label.innerText;
+
+                if (text.toLowerCase().indexOf(filterValue) > -1) {
+                    label.style.display = '';
+                } else {
+                    label.style.display = 'none';
+                }
+            }
+        });     
+
+        // Filter functionality for Library Location
+        document.getElementById('LibraryFilter').addEventListener('input', function() {
+            var filterValue = this.value.toLowerCase();
+            var LibrarySection = document.getElementById('LibrarySection');
+            var labels = LibrarySection.getElementsByTagName('label');
+
+            for (var i = 0; i < labels.length; i++) {
+                var label = labels[i];
+                var text = label.textContent || label.innerText;
+
+                if (text.toLowerCase().indexOf(filterValue) > -1) {
+                    label.style.display = '';
+                } else {
+                    label.style.display = 'none';
+                }
+            }
+        });  
+
+        // To make enter key works only for button search
+        document.querySelectorAll('input[type="text"]').forEach(function(input) {
+            if (input.name !== 'query') {
+                input.addEventListener('keypress', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                    }
+                });
+            }
+        });
+
+        // For Recording
+        let mediaRecorder;
+        let audioChunks = [];
+
+        document.getElementById('record-btn').addEventListener('click', () => {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            document.getElementById('record-btn').textContent = "Record";  // Change button text back to "Record"
+        } else {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.start();
+                document.getElementById('record-btn').textContent = "Stop";  // Change button text to "Stop"
+                document.getElementById('query').value = '';
+
+                    mediaRecorder.addEventListener("dataavailable", event => {
+                        // Create a Blob from the current chunk only
+                        const audioBlob = new Blob([event.data], { type: 'audio/wav' });
+                        const formData = new FormData();
+                        formData.append('audio', audioBlob);
+
+                        // Send the current chunk to the server
+                        fetch('/transcribe/', {
+                            method: 'POST',
+                            body: formData,
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log(data.transcription + "\n");
+                            // Display transcription in the search query box
+                            if (data.transcription) {
+                                document.getElementById('query').value = data.transcription.trim(); // Append transcription
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            document.getElementById('query').value = 'Error: ' + error.message;
+                        });
+                    });
+                });
+        }
+    });
+
+        // For Fields
+        document.querySelector('.add-row-button').addEventListener('click', function() {
+        const searchContainer = document.getElementById('search-container');
+
+        const newRow = document.createElement('div');
+        newRow.classList.add('search-row');
+
+        const logicSelect = document.createElement('select');
+        logicSelect.classList.add('logic-select');
+        logicSelect.innerHTML = `
+            <option value="and">AND</option>
+            <option value="or">OR</option>
+            <option value="not">NOT</option>
+        `;
+        
+        const fieldSelect = document.createElement('select');
+        fieldSelect.classList.add('field-select');
+        fieldSelect.innerHTML = `
+            <option value="all_fields">All Fields</option>
+            <option value="author">Author</option>
+            <option value="title">Title</option>
+            <option value="publication_title">Publication Title</option>
+            <option value="subject_terms">Subject Terms</option>
+            <option value="abstract">Abstract</option>
+            <option value="call_number">Call Number</option>
+            <option value="coden">CODEN</option>
+            <option value="dewey">Dewey</option>
+            <option value="doi">DOI</option>
+            <option value="isbn">ISBN</option>
+            <option value="issn">ISSN</option>
+            <option value="edition">Edition</option>
+            <option value="full_text">Full Text</option>
+            <option value="genre">Genre</option>
+            <option value="geographic_location">Geographic Location</option>
+            <option value="issue">Issue</option>
+            <option value="oclc_number">OCLC Number</option>
+            <option value="patent_number">Patent Number</option>
+            <option value="publisher">Publisher</option>
+        `;
+
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.classList.add('search-input');
+        searchInput.placeholder = 'Enter search term';
+
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.classList.add('remove-row-button');
+        removeButton.textContent = '-';
+        removeButton.style.backgroundColor = '#a80202';
+        removeButton.style.color = 'white';
+        removeButton.style.border = 'none';
+        removeButton.style.padding = '10px 15px';
+        removeButton.style.cursor = 'pointer';
+        removeButton.style.fontSize = '16px';
+        removeButton.style.marginLeft = '5px';
+
+        removeButton.addEventListener('click', function() {
+            searchContainer.removeChild(newRow);
+        });
+
+        newRow.appendChild(logicSelect);
+        newRow.appendChild(fieldSelect);
+        newRow.appendChild(searchInput);
+        newRow.appendChild(removeButton);
+
+        searchContainer.appendChild(newRow);
+    });
+
+    function showLoadingSpinner() {
+        document.getElementById('loading-spinner').style.display = 'block';
+    }
+    
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) { // Checks if the page was loaded from the cache
+            document.getElementById('loading-spinner').style.display = 'none';
+        }
+    });
+
+    </script>
+</body>
+</html>

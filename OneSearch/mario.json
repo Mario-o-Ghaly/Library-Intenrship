@@ -1,0 +1,1 @@
+{"text": " This is for testing.", "segments": [{"id": 0, "seek": 0, "start": 0.0, "end": 4.0, "text": " This is for testing.", "tokens": [50364, 639, 307, 337, 4997, 13, 50564], "temperature": 0.0, "avg_logprob": -0.5802094340324402, "compression_ratio": 0.7692307692307693, "no_speech_prob": 0.07782875001430511}], "language": "en"}
