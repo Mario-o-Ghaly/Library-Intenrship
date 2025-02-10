@@ -23,8 +23,7 @@ import random
 
 
 model = whisper.load_model("small")
-api_key = "AIzaSyCHp33Vzn6f8P7DqRPHzPk1KCiEH5f7Txk"
-# api_key = "AIzaSyDGF_Hn0aWHyiGAooe_ytQUyaou_0N-HmE"
+api_key = ""
 genai.configure(api_key=api_key)
 nlp_model = genai.GenerativeModel('gemini-1.5-flash')
 
